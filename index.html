@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Mon Timer</title>
+  <style> body { font-family:sans-serif; padding:40px; text-align:center; }
+           #timer { font-size:3em; margin-top:20vh; }</style>
+</head>
+<body>
+  <h1>Compte à rebours</h1>
+  <div id="timer">Chargement…</div>
+  <script>
+    const totalHours = 4000;          // ← nombre d’heures à décompter
+    const cible = Date.now() + totalHours * 3600_000;
+
+    function maj() {
+      const remMs = Math.max(0, cible - Date.now());
+      const h = Math.floor(remMs / 3_600_000);
+      const m = Math.floor((remMs % 3_600_000) / 60_000);
+      const s = Math.floor((remMs % 60_000) / 1000);
+      document.getElementById('timer').textContent =
+        `${h} h ${m.toString().padStart(2,'0')} m ${s.toString().padStart(2,'0')} s`;
+      if (remMs <= 0) clearInterval(interval);
+    }
+
+    const interval = setInterval(maj, 1000);
+    maj();
+  </script>
+</body>
+</html>
