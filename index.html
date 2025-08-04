@@ -1,76 +1,43 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Timer synchronisé</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      min-height: 100vh;
-      text-align: center;
-      padding: 2rem;
-      margin: 0;
-    }
-    h1 { font-size: 2rem; margin-bottom: 1rem; }
-    #timer { font-size: 3rem; font-weight: bold; color: #222; }
-    .ending { color: red; font-size: 1.5rem; margin-top: 1.5rem; }
-  </style>
-</head>
-<body>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timer synchronisé</title>
+  <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:100vh;text-align:center;margin:0;padding:2rem;}#timer{font-size:3rem;}#ending{color:red;font-size:1.5rem;margin-top:1.5rem;}</style>
+</head><body>
   <h1>Compte à rebours synchronisé</h1>
   <div id="timer">Chargement…</div>
-  <div id="ending" class="ending"></div>
-
+  <div id="ending"></div>
   <script>
-  (async function() {
-    const cibleISO = '2026-01-01T12:00:00Z'; // ← Modifie ici si besoin
+  (async ()=> {
+    const cibleISO = '2026-01-01T12:00:00Z';
     const targetMs = new Date(cibleISO).getTime();
-
-    const testerTimeout = ms => new Promise(res => setTimeout(res, ms));
-
-    let serveurTime0, perf0;
-
+    let serverOffset = 0;
     try {
-      // Interroger l'API World Time (UTC)
-      const resp = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-      if (!resp.ok) throw new Error('Statut HTTP ' + resp.status);
-      const json = await resp.json();
-      serveurTime0 = json.unixtime * 1000; 
-      perf0 = performance.now();
-    } catch (err) {
-      console.error('Erreur API time:', err);
-      document.getElementById('timer').textContent =
-        '⚠️ Impossible de synchroniser l’heure.';
+      const t0 = Date.now();
+      const resp = await fetch(location.href, {method: 'HEAD', cache: 'no-cache'});
+      const dateHeader = resp.headers.get('Date');
+      const t1 = Date.now();
+      if (!dateHeader) throw 'Pas d’en‑tête Date';
+      const serverTs = Date.parse(dateHeader);
+      serverOffset = serverTs - ((t0 + t1)/2);
+    } catch (e) {
+      document.getElementById('timer').textContent = '⚠️ Impossible de synchroniser l’heure';
+      console.error('HEAD‑fetch Date error', e);
       return;
     }
+    const perf0 = performance.now();
+    const serverNow0 = Date.now() + serverOffset;
 
-    function format(ms) {
-      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
-      const m = String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0');
-      const s = String(Math.floor(ms % 60000 / 1000)).padStart(2, '0');
+    function fmt(ms){ const h = String(Math.floor(ms/3600000)).padStart(2,'0'),
+      m = String(Math.floor(ms%3600000/60000)).padStart(2,'0'),
+      s = String(Math.floor(ms%60000/1000)).padStart(2,'0');
       return `${h} h ${m} m ${s} s`;
     }
-
-    function tick() {
+    function tick(){
       const elapsed = performance.now() - perf0;
-      const rem = Math.max(0, targetMs - (serveurTime0 + elapsed));
-
-      document.getElementById('timer').textContent = format(rem);
-
-      if (rem > 0) {
-        requestAnimationFrame(tick);
-      } else {
-        document.getElementById('ending').textContent = '🎉 C’est terminé !';
-      }
+      const rem = Math.max(0, targetMs - (serverNow0 + elapsed));
+      document.getElementById('timer').textContent = fmt(rem);
+      if (rem > 0) requestAnimationFrame(tick);
+      else document.getElementById('ending').textContent = '🎉 C’est terminé !';
     }
-
     requestAnimationFrame(tick);
   })();
   </script>
-</body>
-</html>
+</body></html>
