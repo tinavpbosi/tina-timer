@@ -1,8 +1,7 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timer synchronisé</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>tinatimer</title>
   <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:100vh;text-align:center;margin:0;padding:2rem;}#timer{font-size:3rem;}#ending{color:red;font-size:1.5rem;margin-top:1.5rem;}</style>
 </head><body>
-  <h1>Compte à rebours synchronisé</h1>
-  <div id="timer">Chargement…</div>
+  <div id="timer">...</div>
   <div id="ending"></div>
   <script>
   (async ()=> {
@@ -18,7 +17,7 @@
       const serverTs = Date.parse(dateHeader);
       serverOffset = serverTs - ((t0 + t1)/2);
     } catch (e) {
-      document.getElementById('timer').textContent = '⚠️ Impossible de synchroniser l’heure';
+      document.getElementById('timer').textContent = 'shi happens';
       console.error('HEAD‑fetch Date error', e);
       return;
     }
@@ -35,7 +34,7 @@
       const rem = Math.max(0, targetMs - (serverNow0 + elapsed));
       document.getElementById('timer').textContent = fmt(rem);
       if (rem > 0) requestAnimationFrame(tick);
-      else document.getElementById('ending').textContent = '🎉 C’est terminé !';
+      else document.getElementById('ending').textContent =synchronisé;
     }
     requestAnimationFrame(tick);
   })();
