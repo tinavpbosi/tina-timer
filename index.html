@@ -1,30 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Mon Timer</title>
-  <style> body { font-family:sans-serif; padding:40px; text-align:center; }
-           #timer { font-size:3em; margin-top:20vh; }</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Timer synchronisé</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      min-height: 100vh;
+      text-align: center;
+      padding: 2rem;
+      margin: 0;
+    }
+    h1 { font-size: 2rem; margin-bottom: 1rem; }
+    #timer { font-size: 3rem; font-weight: bold; color: #222; }
+    .ending { color: red; font-size: 1.5rem; margin-top: 1.5rem; }
+  </style>
 </head>
 <body>
-  <h1>Compte à rebours</h1>
+  <h1>Compte à rebours synchronisé</h1>
   <div id="timer">Chargement…</div>
-  <script>
-    const totalHours = 4000;          // ← nombre d’heures à décompter
-    const cible = Date.now() + totalHours * 3600_000;
+  <div id="ending" class="ending"></div>
 
-    function maj() {
-      const remMs = Math.max(0, cible - Date.now());
-      const h = Math.floor(remMs / 3_600_000);
-      const m = Math.floor((remMs % 3_600_000) / 60_000);
-      const s = Math.floor((remMs % 60_000) / 1000);
+  <script>
+  (async function() {
+    const cibleISO = '2026-01-01T12:00:00Z'; // ← Modifie ici si besoin
+    const targetMs = new Date(cibleISO).getTime();
+
+    const testerTimeout = ms => new Promise(res => setTimeout(res, ms));
+
+    let serveurTime0, perf0;
+
+    try {
+      // Interroger l'API World Time (UTC)
+      const resp = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+      if (!resp.ok) throw new Error('Statut HTTP ' + resp.status);
+      const json = await resp.json();
+      serveurTime0 = json.unixtime * 1000; 
+      perf0 = performance.now();
+    } catch (err) {
+      console.error('Erreur API time:', err);
       document.getElementById('timer').textContent =
-        `${h} h ${m.toString().padStart(2,'0')} m ${s.toString().padStart(2,'0')} s`;
-      if (remMs <= 0) clearInterval(interval);
+        '⚠️ Impossible de synchroniser l’heure.';
+      return;
     }
 
-    const interval = setInterval(maj, 1000);
-    maj();
+    function format(ms) {
+      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+      const m = String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0');
+      const s = String(Math.floor(ms % 60000 / 1000)).padStart(2, '0');
+      return `${h} h ${m} m ${s} s`;
+    }
+
+    function tick() {
+      const elapsed = performance.now() - perf0;
+      const rem = Math.max(0, targetMs - (serveurTime0 + elapsed));
+
+      document.getElementById('timer').textContent = format(rem);
+
+      if (rem > 0) {
+        requestAnimationFrame(tick);
+      } else {
+        document.getElementById('ending').textContent = '🎉 C’est terminé !';
+      }
+    }
+
+    requestAnimationFrame(tick);
+  })();
   </script>
 </body>
 </html>
